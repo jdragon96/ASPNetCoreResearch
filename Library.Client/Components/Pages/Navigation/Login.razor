@@ -1,0 +1,55 @@
+﻿@page "/navigation/login"
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject AuthService Auth
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Library.Client.Components.Shared
+@using Library.Model
+@using System.Text.Json
+@using System.Text
+@rendermode InteractiveServer
+
+<h1>로그인</h1>
+<form @onsubmit="OnLogin" @onsubmit:preventDefault="true">
+    <label for="bookName">아이디</label>
+    <input @bind="LoginModel.UserID" type="text" id="bookName" name="bookName" required>
+
+    <label for="author">비밀번호</label>
+    <input @bind="LoginModel.UserPassword" type="text" id="author" name="author" required>
+
+    <button type="submit">로그인</button>
+</form>
+
+@code {
+    private bool shouldRender = true;
+    private HttpClient _client;
+    private LoginRequest LoginModel { get; set; } = new LoginRequest();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _client = HttpClientFactory.CreateClient("API");
+    }
+
+    private async Task OnLogin()
+    {
+        if (_client == null)
+            return;
+        try
+        {
+            var result = await _client.PostAsJsonAsync("/api/user/login", LoginModel);
+            if (result.IsSuccessStatusCode)
+            {
+                var tokenResponse = await result.Content.ReadFromJsonAsync<LoginResponse>();
+                await localStorage.SetItemAsync("access_token", tokenResponse.AccessToken);
+                await localStorage.SetItemAsync("refresh_token", tokenResponse.RefreshToken);
+                Auth.SetUser(tokenResponse.UserModel);
+                Navigation.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+
+        }
+    }
+}

@@ -1,0 +1,103 @@
+﻿@page "/rental"
+@rendermode InteractiveServer
+@inject APIService API
+@inject IHttpClientFactory HttpClient
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using Library.Model
+@using System.Text.Json
+@using System.Text
+
+<h1>도서 목록</h1>
+
+<div class="row">
+    @foreach (var book in Data)
+    {
+        <div class="col-md-6" style="padding: 10px;">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-center">@book.Name</h5>
+                    <h5 class="card-title" style="font-size: 14px;">총 권수 : @book.Count</h5>
+                    <h5 class="card-title" style="font-size: 14px;">잔여 권수 : @(book.Count - book.RentalCount)</h5>
+                    <h5 class="card-title" style="font-size: 14px;">대여  력 : @(book.RentalCountHistory)</h5>
+                    <div class="column d-flex justify-content-center" style="gap: 10px">
+                        <button class="remove" @onclick="() => OnRemoveBook(book)">삭제</button>
+                        <button class="rental" @onclick="() => OnRentBook(book)">대여</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    <Pagination PageCount="@MaxPageSize" ShowGotoNavigator="true" OnPageLinkClick="@OnChangePage" />
+</div>
+
+@code {
+    private HttpClient _client;
+    private List<Book> Data { get; set; } = new();
+    private int MaxPageSize { get; set; } = 1;
+    private int CurrentPage { get; set; } = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _client = HttpClient.CreateClient("API");
+        await base.OnInitializedAsync();
+        // await InitBookList();
+        // StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await InitBookList();
+        // await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task OnRemoveBook(Book SelectedBook)
+    {
+        if (_client == null)
+            return;
+        await RemoveBook(SelectedBook.Id);
+        await InitBookList();
+    }
+
+    private async Task OnRentBook(Book SelectedBook)
+    {
+
+    }
+
+    private async Task OnChangePage(int index)
+    {
+        CurrentPage = index;
+        await InitBookList();
+        return;
+    }
+
+    private async Task InitBookList()
+    {
+        try
+        {
+            var token = await localStorage.GetItemAsync<string>("access_token");
+            if (token == null)
+                return;
+            _client.DefaultRequestHeaders.Remove("Authorization");
+            _client.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
+            var res = await _client.GetAsync($"/api/book?page={CurrentPage}");
+            if (res.IsSuccessStatusCode)
+            {
+                var data = await res.Content.ReadFromJsonAsync<BookSelectResponse>();
+                Data = data.Books;
+                // StateHasChanged();
+            }
+        }
+        catch (Exception e)
+        {
+            var msg = e.Message;
+        }
+    }
+    private async Task RemoveBook(int ID)
+    {
+        var res = await _client.DeleteAsync($"/api/book?id={ID}");
+        if (res != null)
+        {
+
+        }
+    }
+}

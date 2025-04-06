@@ -1,0 +1,70 @@
+﻿@page "/add/book"
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+@using Library.Client.Components.Shared
+@using Library.Model
+@using System.Text.Json
+@using System.Text
+@rendermode InteractiveServer
+
+<h1>도서 추가</h1>
+<form @onsubmit="AddNewUser" @onsubmit:preventDefault="true">
+    <label for="bookName">도서 이름</label>
+    <input @bind="NewBook.Name" type="text" id="bookName" name="bookName" required>
+
+    <label for="author">저자</label>
+    <input @bind="NewBook.AuthorName" type="text" id="author" name="author" required>
+
+    <label for="volume">권 수</label>
+    <input @bind="NewBook.Count" type="number" id="volume" name="volume" min="1" required>
+
+    <label for="category">분야</label>
+    <select id="category" name="category">
+        <option value="소설">소설</option>
+        <option value="과학">과학</option>
+        <option value="역사">역사</option>
+        <option value="예술">예술</option>
+        <option value="기타">기타</option>
+    </select>
+
+    <button type="submit">추가</button>
+</form>
+
+@code {
+    private bool shouldRender = true;
+    private HttpClient _client;
+    private Book NewBook { get; set; } = new Book();
+    // private Toast toastRef;
+    private string ToastMessage { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _client = HttpClientFactory.CreateClient("API");
+    }
+
+    private async Task AddNewUser()
+    {
+        if (_client == null)
+            return;
+        try
+        {
+            var json = JsonSerializer.Serialize(NewBook);
+            var content = new StringContent(JsonSerializer.Serialize(NewBook), Encoding.UTF8, "application/json");
+            var res = await _client.PostAsync("/api/book", content);
+            if (res.IsSuccessStatusCode)
+            {
+                // Console.WriteLine("Success");
+                Navigation.NavigateTo("/rental");
+            }
+            else
+            {
+                ToastMessage = await res.Content.ReadAsStringAsync();
+                // toastRef.Show();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Console.WriteLine($"Exception: {ex.Message}");
+        }
+    }
+}

@@ -1,0 +1,58 @@
+﻿@inherits LayoutComponentBase
+@inject AuthService Auth;
+@inject NavigationManager Navigation
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            @if (Auth.IsAuthenticated)
+            {
+                <div class="container">
+                    <div class="bi bi-plus-square-fill-nav-menu" aria-hidden="true">환영합니다 @Auth.CurrentUser.Name 님</div>
+                    <button type="submit" onclick="@OnClickLogout" class="bi bi-plus-square-fill-nav-menu" aria-hidden="true">로그아웃</button>
+                </div>
+            }
+            else
+            {
+                <NavLink class="nav-link" href="navigation/login">
+                    <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> 로그인
+                </NavLink>
+                <NavLink class="nav-link" href="navigation/register">
+                    <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> 회원가입
+                </NavLink>
+            }
+        </div>
+
+        <div class="content px-4">
+            <BootstrapBlazorRoot>
+                @Body
+            </BootstrapBlazorRoot>
+        </div>
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        if (!Auth.IsAuthenticated && !Navigation.Uri.Contains("navigation/login"))
+        {
+            Navigation.NavigateTo("navigation/login", forceLoad: true);
+        }
+    }
+
+    private async Task OnClickLogout()
+    {
+
+    }
+
+}

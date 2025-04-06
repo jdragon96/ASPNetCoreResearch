@@ -1,0 +1,45 @@
+﻿@page "/"
+@inject APIService API
+@using Library.Model
+<h1>안녕하세요, 도서관에 오신걸 환영합니다.</h1>
+
+<div class="row">
+    @foreach (var user in Data)
+    {
+        <div class="col-md-4" style="padding: 10px;">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-center">유저</h5>
+                    <h5 class="card-title" style="font-size: 14px;">계정 : @user.UserID</h5>
+                    <h5 class="card-title" style="font-size: 14px;">이름 : @user.Name</h5>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<canvas id="myChart"></canvas>
+
+@code {
+    private List<User> Data { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchDataFromApi();
+    }
+
+    private async Task FetchDataFromApi()
+    {
+        var response = await API.GETAuth<List<User>>("/api/user");
+        if (response != null)
+        {
+            Data = response;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        await FetchDataFromApi();
+    }
+}
